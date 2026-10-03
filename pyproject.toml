@@ -1,0 +1,26 @@
+[project]
+name = "sticks3"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "George Kowalski", email = "gkowalski@mcw.edu" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+    "pyserial>=3.5",
+    "python-dotenv>=1.2.4",
+]
+
+[project.scripts]
+sticks3 = "sticks3:main"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
