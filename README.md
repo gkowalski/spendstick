@@ -46,12 +46,46 @@ uv run pytest                  # unit tests
 ```
 
 ## Firmware (`firmware/`, PlatformIO)
+Install PlatformIO once with `uv tool install platformio`. The first build downloads the ESP32-C5
+toolchain and takes a few minutes; later builds take seconds.
+
+### Updating to a new release
+The host program and the firmware share a JSON frame format, so update both together.
+
+1. **Stop the host:** press Ctrl-C in the terminal running `uv run sticks3`.
+2. **Get the release:**
+   ```
+   git fetch --tags && git checkout <tag>        # e.g. v0.2, or `git pull` to follow main
+   uv sync                                        # refresh Python deps
+   ```
+3. **Find the dongle's port:** `ls /dev/cu.usbmodem*`. The name can change when you replug it, and
+   other Espressif boards (e.g. a StickS3) use the same pattern, so unplug the others if unsure.
+4. **Flash it:**
+   ```
+   cd firmware
+   pio run -t upload --upload-port /dev/cu.usbmodemXXXX
+   cd ..
+   ```
+   Success ends with `Hash of data verified` and `[SUCCESS]`. The dongle reboots by itself.
+5. **Restart the host:** `uv run sticks3`. The screen shows "waiting for host..." until the first frame
+   arrives (up to a minute).
+
+If you see a stale `VIRTUAL_ENV` warning from uv, open a fresh terminal or run `deactivate`.
+
+### If the upload fails
+- Make sure nothing else holds the port (the host program, a serial monitor).
+- Enter download mode: unplug the dongle, hold the **BOOT** button, plug it back in, then release
+  and run the upload again.
+
+### Checking the firmware
+`pio run -e diag` builds a minimal image that only prints `diag alive N` over serial, useful to
+separate hardware problems from application bugs. To confirm the app is running, the handshake
+returns its version:
 ```
-uv tool install platformio
-cd firmware && pio run -t upload --upload-port <port>
+uv run python -c "from sticks3 import device; s=device.open_port('/dev/cu.usbmodemXXXX'); print(device.handshake(s)); s.close()"
 ```
-`pio run -e diag` builds a minimal serial-only image for bring-up.
-The BOOT button flips screens manually; the header dot turns red when data is over 3 min old.
+The BOOT button flips screens manually; the header shows seconds until the next switch, and its
+dot turns red when data is over 3 minutes old.
 
 ## Notes
 - The USB-CDC port drops device output unless DTR is asserted; `device.open_port` handles this.

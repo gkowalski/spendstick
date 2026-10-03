@@ -44,6 +44,7 @@ def usage_frame(hourly: list[dict], daily: list[dict], ts: int) -> dict:
         "h24": _sum_tokens(hourly),
         "d7": _sum_tokens(daily),
         "spark24": [_bucket_total(b) for b in hourly],
+        "spark7": [_bucket_total(b) for b in daily[-7:]],
         "top": _top_models(hourly),
         "ts": ts,
     }

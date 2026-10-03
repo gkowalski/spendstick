@@ -26,6 +26,7 @@ def test_usage_frame_sums_and_top():
     assert f["h24"] == {"in": 110, "out": 50, "cache_r": 200, "cache_w": 10}
     assert f["d7"]["in"] == 1000
     assert f["spark24"] == [160, 0, 210]
+    assert f["spark7"] == [1000]
     assert f["top"] == [["a", 360], ["b", 10]]
     assert f["ts"] == 7
 

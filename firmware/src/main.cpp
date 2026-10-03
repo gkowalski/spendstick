@@ -20,7 +20,7 @@ GFXcanvas16 canvas(160, 80);
 struct Usage {
   bool valid = false;
   uint64_t in = 0, out = 0, cacheR = 0, cacheW = 0, d7 = 0;
-  uint32_t spark[24] = {};
+  uint32_t spark[7] = {};  // daily totals, last 7 days
   uint8_t nSpark = 0;
   char top[24] = "";
   uint32_t rxMs = 0;
@@ -66,17 +66,16 @@ void drawHeader(const char* title, uint16_t accent, uint32_t rxMs, bool valid) {
   canvas.print(title);
   bool stale = !valid || (millis() - rxMs) / 1000 > STALE_S;
   canvas.fillCircle(152, 6, 3, stale ? C_BAD : C_BG);
-  if (valid) {
-    char b[12];
-    uint32_t age = (millis() - rxMs) / 1000;
-    if (age < 100) snprintf(b, sizeof b, "%lus", (unsigned long)age);
-    else snprintf(b, sizeof b, "%lum", (unsigned long)(age / 60));
-    int16_t x1, y1;
-    uint16_t w, h;
-    canvas.getTextBounds(b, 0, 0, &x1, &y1, &w, &h);
-    canvas.setCursor(144 - w, 2);
-    canvas.print(b);
-  }
+  // Seconds until the screen switches.
+  uint32_t elapsed = millis() - screenSince;
+  uint32_t left = elapsed >= SCREEN_MS ? 0 : (SCREEN_MS - elapsed + 999) / 1000;
+  char b[12];
+  snprintf(b, sizeof b, "%lus", (unsigned long)left);
+  int16_t x1, y1;
+  uint16_t w, h;
+  canvas.getTextBounds(b, 0, 0, &x1, &y1, &w, &h);
+  canvas.setCursor(144 - w, 2);
+  canvas.print(b);
 }
 
 template <typename T>
@@ -103,19 +102,18 @@ void drawWaiting(const char* title, uint16_t accent) {
 
 void drawUsage() {
   canvas.fillScreen(C_BG);
-  if (!usage.valid) return drawWaiting("USAGE 24h", C_USAGE);
-  drawHeader("USAGE 24h", C_USAGE, usage.rxMs, true);
-  uint64_t total = usage.in + usage.out + usage.cacheR + usage.cacheW;
+  if (!usage.valid) return drawWaiting("USAGE 7d", C_USAGE);
+  drawHeader("USAGE 7d", C_USAGE, usage.rxMs, true);
   canvas.setTextColor(C_FG);
   canvas.setTextSize(3);
   canvas.setCursor(4, 16);
-  canvas.print(fmtTokens(total));
+  canvas.print(fmtTokens(usage.d7));
   canvas.setTextSize(1);
   canvas.setTextColor(C_DIM);
   canvas.setCursor(4, 42);
-  canvas.printf("in %s  out %s", fmtTokens(usage.in).c_str(), fmtTokens(usage.out).c_str());
+  canvas.printf("24h in %s out %s", fmtTokens(usage.in).c_str(), fmtTokens(usage.out).c_str());
   canvas.setCursor(4, 52);
-  canvas.printf("7d %s", fmtTokens(usage.d7).c_str());
+  canvas.print("tokens, 7 days");
   drawBars(usage.spark, usage.nSpark, 4, 62, 152, 16, C_USAGE);
 }
 
@@ -154,9 +152,9 @@ void handleLine(const String& s) {
     usage.cacheW = doc["h24"]["cache_w"] | 0ULL;
     JsonObject d7 = doc["d7"];
     usage.d7 = (uint64_t)(d7["in"] | 0ULL) + (d7["out"] | 0ULL) + (d7["cache_r"] | 0ULL) + (d7["cache_w"] | 0ULL);
-    JsonArray sp = doc["spark24"];
+    JsonArray sp = doc["spark7"];
     usage.nSpark = 0;
-    for (JsonVariant v : sp) if (usage.nSpark < 24) usage.spark[usage.nSpark++] = v.as<uint32_t>();
+    for (JsonVariant v : sp) if (usage.nSpark < 7) usage.spark[usage.nSpark++] = v.as<uint32_t>();
     usage.valid = true;
     usage.rxMs = millis();
   } else if (!strcmp(t, "cost")) {
