@@ -1,4 +1,6 @@
-# T-Dongle C5 Anthropic usage/cost display
+# spendstick
+
+T-Dongle C5 Anthropic usage/cost display.
 
 A Python program on the Mac polls Anthropic's Admin API (Messages Usage + Cost reports) every
 60 s and pushes compact JSON over USB serial to a LilyGO T-Dongle C5, which alternates a Usage
