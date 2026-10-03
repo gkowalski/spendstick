@@ -2,12 +2,14 @@
 
 T-Dongle C5 Anthropic usage/cost display.
 
+**Product Link:** [LilyGO T-Dongle C5](https://lilygo.cc/en-us/products/t-dongle-c5)
+
 A Python program on the Mac polls Anthropic's Admin API (Messages Usage + Cost reports) every
 60 s and pushes compact JSON over USB serial to a LilyGO T-Dongle C5, which alternates a Usage
 screen and a Cost screen every 60 s on its 160x80 LCD.
 
 ![The Usage screen running on a T-Dongle C5: 7-day total, 24h in/out, and a countdown to the next screen](images/spendstick-usage.jpg)
-
+ 
 The screens rotate every 60 s: **Usage** (7-day total), **Cost** (7-day total) and **Reset**
 (countdown to the monthly reset, plus month-to-date cost and a month-elapsed bar).
 
