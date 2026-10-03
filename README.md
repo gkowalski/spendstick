@@ -79,8 +79,8 @@ If you see a stale `VIRTUAL_ENV` warning from uv, open a fresh terminal or run `
 
 ### Checking the firmware
 `pio run -e diag` builds a minimal image that only prints `diag alive N` over serial, useful to
-separate hardware problems from application bugs. To confirm the app is running, the handshake
-returns its version:
+separate hardware problems from application bugs. To confirm the app is running, the `hello` handshake
+prints `True` when the dongle answers:
 ```
 uv run python -c "from sticks3 import device; s=device.open_port('/dev/cu.usbmodemXXXX'); print(device.handshake(s)); s.close()"
 ```
