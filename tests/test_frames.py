@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sticks3.frames import cents_to_usd, cost_frame, month_bounds, reset_frame, usage_frame
+from sticks3.frames import cents_to_usd, cost_frame, month_bounds, mtd_buckets, reset_frame, usage_frame
 
 
 def _res(model, i=0, o=0, cr=0, c5=0, c1=0):
@@ -62,3 +62,13 @@ def test_reset_frame_countdown_and_mtd():
     assert f["date"] == "Nov 1"
     assert f["mtd"] == 1.5
     assert 0.9 < f["elapsed"] < 1.0
+
+
+def test_mtd_buckets_drops_previous_month():
+    now = datetime(2026, 10, 3, 12, tzinfo=timezone.utc)
+    buckets = [
+        {"starting_at": "2026-09-30T00:00:00Z", "results": []},
+        {"starting_at": "2026-10-01T00:00:00Z", "results": []},
+        {"starting_at": "2026-10-02T00:00:00Z", "results": []},
+    ]
+    assert [b["starting_at"][:10] for b in mtd_buckets(buckets, now)] == ["2026-10-01", "2026-10-02"]

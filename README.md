@@ -44,7 +44,11 @@ What the numbers mean:
 1. `cp .env.example .env` and set `ANTHROPIC_ADMIN_API_KEY` (see above). `.env` is gitignored.
 2. Optionally set `SERIAL_PORT` (e.g. `/dev/cu.usbmodem1134101`). Left empty, the program scans
    Espressif USB ports and picks the one that answers the `hello` handshake.
-3. Check it: `uv run sticks3 --dry-run --once` should print a `usage` and a `cost` frame.
+3. The program calls the API every `REFRESH_SECONDS` (default 300) and re-sends the cached data to the
+   dongle every `POLL_SECONDS` (default 60). Reports lag by a few minutes anyway, so polling the API
+   faster only risks `429 rate_limit_error`. On a 429 it honors `retry-after` and keeps showing the
+   cached data; if the API hasn't succeeded for 15 minutes it stops sending, so the dot turns red.
+4. Check it: `uv run sticks3 --dry-run --once` should print a `usage` and a `cost` frame.
    `403` means the key lacks Admin API access; `401` means the key is wrong.
 
 ## Run

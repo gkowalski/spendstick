@@ -8,6 +8,27 @@ a frame format, so **reflash the firmware and restart `uv run sticks3` on every 
 
 Nothing yet.
 
+## v0.3.1 - 2026-10-03
+
+### Fixed
+- **429 `rate_limit_error` from the Admin API.** The host made four API calls every 60 s and retried
+  429s after a few seconds, ignoring `retry-after`. It now refreshes from the API every
+  `REFRESH_SECONDS` (default 300) and re-sends cached frames every `POLL_SECONDS`, honors
+  `retry-after` on a 429 (showing cached data meanwhile), and needs three calls per refresh instead
+  of four (cost and month-to-date share one call).
+
+### Changed
+- The Cost screen's top model now covers the whole window and is no longer empty when today has no
+  spend. Frames stop being sent if the API hasn't succeeded for 15 minutes, so the red stale dot
+  appears.
+
+### Added
+- `REFRESH_SECONDS` setting in `.env`.
+- Product link to the LilyGO T-Dongle C5 in the README.
+
+### Upgrade notes
+- Host-only change: restart `uv run sticks3`. No firmware reflash is needed.
+
 ## v0.3 - 2026-10-03
 
 ### Added

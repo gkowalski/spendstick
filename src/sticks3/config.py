@@ -9,6 +9,7 @@ class Config:
     admin_key: str
     serial_port: str | None
     poll_seconds: int
+    refresh_seconds: int
 
 
 def load_config(require_key: bool = True) -> Config:
@@ -21,4 +22,5 @@ def load_config(require_key: bool = True) -> Config:
         admin_key=key,
         serial_port=os.environ.get("SERIAL_PORT", "").strip() or None,
         poll_seconds=int(os.environ.get("POLL_SECONDS", "60") or 60),
+        refresh_seconds=int(os.environ.get("REFRESH_SECONDS", "300") or 300),
     )

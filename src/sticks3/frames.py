@@ -100,3 +100,14 @@ def reset_frame(now: datetime, mtd_buckets: list[dict], ts: int) -> dict:
         "mtd": round(sum(_bucket_cost(b) for b in mtd_buckets), 2),
         "ts": ts,
     }
+
+
+def mtd_buckets(buckets: list[dict], now: datetime) -> list[dict]:
+    """Keep only the buckets that start in the current UTC month (buckets without a start are kept)."""
+    start, _ = month_bounds(now)
+    out = []
+    for b in buckets:
+        st = b.get("starting_at")
+        if st is None or datetime.fromisoformat(st.replace("Z", "+00:00")) >= start:
+            out.append(b)
+    return out

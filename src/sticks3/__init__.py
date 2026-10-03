@@ -7,9 +7,9 @@ import httpx
 import serial
 
 from sticks3 import device
-from sticks3.admin_api import AdminApi
+from sticks3.admin_api import AdminApi, RateLimited
 from sticks3.config import load_config
-from sticks3.frames import cost_frame, reset_frame, usage_frame
+from sticks3.frames import cost_frame, mtd_buckets, reset_frame, usage_frame
 
 
 def _sample_frames() -> list[dict]:
@@ -35,12 +35,20 @@ def _sample_frames() -> list[dict]:
     ]
 
 
-def _fetch_frames(api: AdminApi) -> list[dict]:
+STALE_AFTER_S = 900  # stop sending usage/cost if the API hasn't succeeded for this long (dot goes red)
+
+
+def _fetch_raw(api: AdminApi) -> dict:
+    return {"hourly": api.usage_24h(), "daily": api.usage_7d(), "cost": api.cost_window()}
+
+
+def _build_frames(raw: dict) -> list[dict]:
+    now = datetime.now(timezone.utc)
     ts = int(time.time())
     return [
-        usage_frame(api.usage_24h(), api.usage_7d(), ts),
-        cost_frame(api.cost_7d(), ts),
-        reset_frame(datetime.now(timezone.utc), api.cost_mtd(), ts),
+        usage_frame(raw["hourly"], raw["daily"], ts),
+        cost_frame(raw["cost"], ts),
+        reset_frame(now, mtd_buckets(raw["cost"], now), ts),
     ]
 
 
@@ -56,10 +64,29 @@ def main() -> None:
     api = None if args.simulate else AdminApi(cfg.admin_key)
     port = args.port or cfg.serial_port
     ser: serial.Serial | None = None
+    raw: dict | None = None
+    raw_at = 0.0       # monotonic time of the last successful API refresh
+    next_try = 0.0     # don't call the API before this monotonic time
 
     while True:
+        frames: list[dict] = []
         try:
-            frames = _sample_frames() if args.simulate else _fetch_frames(api)
+            if args.simulate:
+                frames = _sample_frames()
+            else:
+                if time.monotonic() >= next_try and (
+                    raw is None or time.monotonic() - raw_at >= cfg.refresh_seconds
+                ):
+                    next_try = time.monotonic() + cfg.refresh_seconds  # also the retry delay after errors
+                    raw = _fetch_raw(api)
+                    raw_at = time.monotonic()
+                if raw is not None and time.monotonic() - raw_at <= STALE_AFTER_S:
+                    frames = _build_frames(raw)
+        except RateLimited as e:
+            next_try = time.monotonic() + e.retry_after
+            print(f"rate limited by the API; backing off {e.retry_after:.0f}s (showing cached data)")
+            if raw is not None and time.monotonic() - raw_at <= STALE_AFTER_S:
+                frames = _build_frames(raw)
         except httpx.HTTPStatusError as e:
             code = e.response.status_code
             print(f"API error {code}: {e.response.text[:200]}")
@@ -69,10 +96,12 @@ def main() -> None:
                     "key (not workspace-scoped) belonging to an organization; individual accounts "
                     "can't use the Admin API"
                 )
-            frames = []
+            if raw is not None and time.monotonic() - raw_at <= STALE_AFTER_S:
+                frames = _build_frames(raw)
         except httpx.HTTPError as e:
             print(f"network error: {e}")
-            frames = []
+            if raw is not None and time.monotonic() - raw_at <= STALE_AFTER_S:
+                frames = _build_frames(raw)
 
         for f in frames:
             if args.dry_run:
