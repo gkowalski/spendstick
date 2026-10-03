@@ -1,4 +1,6 @@
-from sticks3.frames import cents_to_usd, cost_frame, usage_frame
+from datetime import datetime, timezone
+
+from sticks3.frames import cents_to_usd, cost_frame, month_bounds, reset_frame, usage_frame
 
 
 def _res(model, i=0, o=0, cr=0, c5=0, c1=0):
@@ -45,3 +47,18 @@ def test_cost_frame_cents_and_today():
 
 def test_cost_frame_empty():
     assert cost_frame([], ts=1)["today"] == 0.0
+
+
+def test_month_bounds_rolls_over_year():
+    start, nxt = month_bounds(datetime(2026, 12, 15, 8, tzinfo=timezone.utc))
+    assert start == datetime(2026, 12, 1, tzinfo=timezone.utc)
+    assert nxt == datetime(2027, 1, 1, tzinfo=timezone.utc)
+
+
+def test_reset_frame_countdown_and_mtd():
+    now = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
+    f = reset_frame(now, [{"results": [{"amount": "150"}]}, {"results": []}], ts=1)
+    assert f["left_s"] == 36 * 3600  # 30 Oct 12:00 -> 1 Nov 00:00
+    assert f["date"] == "Nov 1"
+    assert f["mtd"] == 1.5
+    assert 0.9 < f["elapsed"] < 1.0

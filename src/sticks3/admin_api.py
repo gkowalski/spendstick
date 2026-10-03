@@ -70,6 +70,23 @@ class AdminApi:
             },
         )
 
+    def cost_mtd(self, now: datetime | None = None) -> list[dict]:
+        now = now or datetime.now(timezone.utc)
+        return self._get_all(
+            "cost_report",
+            {
+                "starting_at": _iso(_month_start(now)),
+                "ending_at": _iso(now + timedelta(days=1)),
+                "bucket_width": "1d",
+                "limit": 31,
+            },
+        )
+
+
+def _month_start(now: datetime) -> datetime:
+    now = now.astimezone(timezone.utc)
+    return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
 
 def _iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

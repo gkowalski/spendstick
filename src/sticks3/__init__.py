@@ -1,6 +1,7 @@
 import argparse
 import json
 import time
+from datetime import datetime, timezone
 
 import httpx
 import serial
@@ -8,7 +9,7 @@ import serial
 from sticks3 import device
 from sticks3.admin_api import AdminApi
 from sticks3.config import load_config
-from sticks3.frames import cost_frame, usage_frame
+from sticks3.frames import cost_frame, reset_frame, usage_frame
 
 
 def _sample_frames() -> list[dict]:
@@ -30,6 +31,7 @@ def _sample_frames() -> list[dict]:
             "top": [["claude-opus-5", 3.9], ["claude-sonnet-5", 0.9]],
             "ts": ts,
         },
+        reset_frame(datetime.now(timezone.utc), [{"results": [{"amount": "1840"}]}], ts),
     ]
 
 
@@ -38,6 +40,7 @@ def _fetch_frames(api: AdminApi) -> list[dict]:
     return [
         usage_frame(api.usage_24h(), api.usage_7d(), ts),
         cost_frame(api.cost_7d(), ts),
+        reset_frame(datetime.now(timezone.utc), api.cost_mtd(), ts),
     ]
 
 

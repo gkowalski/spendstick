@@ -1,6 +1,7 @@
 """Pure functions turning Admin API buckets into the compact frames sent to the device."""
 
 from collections import defaultdict
+from datetime import datetime, timezone
 
 TOP_N = 3
 
@@ -71,5 +72,31 @@ def cost_frame(daily: list[dict], ts: int) -> dict:
         "d7": round(sum(_bucket_cost(b) for b in daily), 2),
         "spark7": [round(_bucket_cost(b), 2) for b in daily],
         "top": [[m, round(c, 2)] for m, c in top if c > 0],
+        "ts": ts,
+    }
+
+
+def month_bounds(now: datetime) -> tuple[datetime, datetime]:
+    """Start of the current UTC calendar month and the start of the next one (the reset)."""
+    now = now.astimezone(timezone.utc)
+    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if start.month == 12:
+        nxt = start.replace(year=start.year + 1, month=1)
+    else:
+        nxt = start.replace(month=start.month + 1)
+    return start, nxt
+
+
+def reset_frame(now: datetime, mtd_buckets: list[dict], ts: int) -> dict:
+    start, nxt = month_bounds(now)
+    total = (nxt - start).total_seconds()
+    left = max(0, int((nxt - now).total_seconds()))
+    return {
+        "t": "reset",
+        "period": "monthly",
+        "left_s": left,
+        "date": nxt.strftime("%b %-d"),
+        "elapsed": round(1 - left / total, 3),
+        "mtd": round(sum(_bucket_cost(b) for b in mtd_buckets), 2),
         "ts": ts,
     }

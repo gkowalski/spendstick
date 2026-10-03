@@ -35,12 +35,22 @@ struct Cost {
   uint32_t rxMs = 0;
 } cost;
 
+struct Reset {
+  bool valid = false;
+  uint32_t leftS = 0;   // seconds to the reset at the time the frame arrived
+  float elapsed = 0;    // fraction of the period already used
+  float mtd = 0;
+  char date[12] = "";
+  uint32_t rxMs = 0;
+} reset;
+
+constexpr uint8_t NUM_SCREENS = 3;
 uint8_t screen = 0;
 uint32_t screenSince = 0;
 String line;
 
 // RGB565 palette
-uint16_t C_BG, C_FG, C_DIM, C_USAGE, C_COST, C_BAD;
+uint16_t C_BG, C_FG, C_DIM, C_USAGE, C_COST, C_RESET, C_BAD;
 
 String fmtTokens(uint64_t n) {
   char b[16];
@@ -134,8 +144,34 @@ void drawCost() {
   drawBars(cost.spark, cost.nSpark, 4, 62, 152, 16, C_COST);
 }
 
+void drawReset() {
+  canvas.fillScreen(C_BG);
+  if (!reset.valid) return drawWaiting("RESET monthly", C_RESET);
+  drawHeader("RESET monthly", C_RESET, reset.rxMs, true);
+  uint32_t passed = (millis() - reset.rxMs) / 1000;
+  uint32_t left = reset.leftS > passed ? reset.leftS - passed : 0;
+  uint32_t d = left / 86400, h = (left % 86400) / 3600, m = (left % 3600) / 60;
+  char b[16];
+  if (d > 0) snprintf(b, sizeof b, "%lud %luh", (unsigned long)d, (unsigned long)h);
+  else snprintf(b, sizeof b, "%luh %lum", (unsigned long)h, (unsigned long)m);
+  canvas.setTextColor(C_FG);
+  canvas.setTextSize(3);
+  canvas.setCursor(4, 16);
+  canvas.print(b);
+  canvas.setTextSize(1);
+  canvas.setTextColor(C_DIM);
+  canvas.setCursor(4, 42);
+  canvas.printf("resets %s 00:00 UTC", reset.date);
+  canvas.setCursor(4, 52);
+  canvas.printf("month to date $%.2f", reset.mtd);
+  canvas.drawRect(4, 64, 152, 10, C_DIM);
+  canvas.fillRect(5, 65, (int)(150 * reset.elapsed), 8, C_RESET);
+}
+
 void render() {
-  if (screen == 0) drawUsage(); else drawCost();
+  if (screen == 0) drawUsage();
+  else if (screen == 1) drawCost();
+  else drawReset();
   tft.drawRGBBitmap(0, 0, canvas.getBuffer(), 160, 80);
 }
 
@@ -170,6 +206,13 @@ void handleLine(const String& s) {
     }
     cost.valid = true;
     cost.rxMs = millis();
+  } else if (!strcmp(t, "reset")) {
+    reset.leftS = doc["left_s"] | 0u;
+    reset.elapsed = doc["elapsed"] | 0.0f;
+    reset.mtd = doc["mtd"] | 0.0f;
+    snprintf(reset.date, sizeof reset.date, "%s", (const char*)(doc["date"] | ""));
+    reset.valid = true;
+    reset.rxMs = millis();
   } else {
     return;
   }
@@ -195,6 +238,7 @@ void setup() {
   C_DIM = tft.color565(140, 146, 160);
   C_USAGE = tft.color565(255, 150, 60);
   C_COST = tft.color565(60, 200, 180);
+  C_RESET = tft.color565(150, 130, 255);
   C_BAD = tft.color565(230, 60, 60);
   line.reserve(2048);
   Serial.println("boot: first render");
@@ -221,7 +265,7 @@ void loop() {
 
   static uint32_t lastTick = 0;
   if (flip || millis() - screenSince >= SCREEN_MS) {
-    screen ^= 1;
+    screen = (screen + 1) % NUM_SCREENS;
     screenSince = millis();
     render();
   } else if (millis() - lastTick >= 1000) {  // refresh the age readout
