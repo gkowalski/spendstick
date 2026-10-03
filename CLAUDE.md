@@ -12,7 +12,7 @@ Mac-side Python program + ESP32-C5 firmware that shows Anthropic Admin API usage
 Newline-delimited JSON host -> device over USB CDC: `{"t":"usage"|"cost",...}` frames and `{"t":"hello"}` -> `{"ok":"tdongle-c5","fw":...}`. Keep `frames.py` and the parser in `firmware/src/main.cpp` in sync when changing fields.
 
 ## Gotchas
-- Usage/Cost endpoints need an **Admin API key** (`sk-ant-admin...`) in `.env` (gitignored). Never print or commit it.
+- Usage/Cost endpoints need an **Admin API key** (`sk-ant-admin...`, or a non-workspace-scoped personal/service key of an org member) in `.env` (gitignored). Never print or commit it.
 - Cost report is daily buckets only and `amount` is a decimal string in **cents**.
 - The device's USB-CDC drops output unless the host asserts **DTR**; keep RTS low so opening the port doesn't reset the chip (`device.open_port`).
 - StickS3 and the dongle both enumerate as VID:PID 303A:1001; identify the dongle by the `hello` handshake or an explicit `SERIAL_PORT`. Don't assume `/dev/ttyUSB0` (macOS uses `/dev/cu.usbmodem*`).

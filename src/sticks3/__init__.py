@@ -58,7 +58,14 @@ def main() -> None:
         try:
             frames = _sample_frames() if args.simulate else _fetch_frames(api)
         except httpx.HTTPStatusError as e:
-            print(f"API error {e.response.status_code}: {e.response.text[:200]}")
+            code = e.response.status_code
+            print(f"API error {code}: {e.response.text[:200]}")
+            if code in (401, 403):
+                print(
+                    "hint: the key must be an Admin API key, an org:admin token, or a personal/service "
+                    "key (not workspace-scoped) belonging to an organization; individual accounts "
+                    "can't use the Admin API"
+                )
             frames = []
         except httpx.HTTPError as e:
             print(f"network error: {e}")

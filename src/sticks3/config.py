@@ -17,11 +17,6 @@ def load_config(require_key: bool = True) -> Config:
     if require_key:
         if not key:
             raise SystemExit("ANTHROPIC_ADMIN_API_KEY is not set; add it to .env")
-        if not key.startswith("sk-ant-admin"):
-            raise SystemExit(
-                "ANTHROPIC_ADMIN_API_KEY must be an Admin API key (sk-ant-admin...); "
-                "regular API keys cannot read usage/cost reports"
-            )
     return Config(
         admin_key=key,
         serial_port=os.environ.get("SERIAL_PORT", "").strip() or None,

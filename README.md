@@ -8,7 +8,8 @@ screen and a Cost screen every 60 s on its 160x80 LCD.
 
 ## Setup
 1. `cp .env.example .env` and set `ANTHROPIC_ADMIN_API_KEY` to an **Admin API key**
-   (`sk-ant-admin...`, created in the Console by an org admin). Regular API keys can't read these reports.
+   (`sk-ant-admin...`) or a personal/service key that isn't workspace-scoped. The account must belong to an
+   organization (individual accounts can't use the Admin API).
 2. Optionally set `SERIAL_PORT` (e.g. `/dev/cu.usbmodem1134101`). Left empty, the program scans
    Espressif USB ports and picks the one that answers the `hello` handshake.
 
