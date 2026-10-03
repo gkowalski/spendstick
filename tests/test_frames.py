@@ -40,7 +40,7 @@ def test_cost_frame_cents_and_today():
     assert f["today"] == 1.5
     assert f["d7"] == 4.0
     assert f["spark7"] == [2.5, 1.5]
-    assert f["top"] == [["a", 1.0], ["b", 0.5]]
+    assert f["top"] == [["a", 3.5], ["b", 0.5]]  # top models over the 7 days
 
 
 def test_cost_frame_empty():

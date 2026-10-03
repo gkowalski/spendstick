@@ -61,8 +61,9 @@ def _bucket_cost(bucket: dict) -> float:
 def cost_frame(daily: list[dict], ts: int) -> dict:
     daily = daily[-7:]
     per_model: dict[str, float] = defaultdict(float)
-    for r in daily[-1]["results"] if daily else []:
-        per_model[r.get("model") or r.get("description") or "other"] += cents_to_usd(r["amount"])
+    for b in daily:
+        for r in b["results"]:
+            per_model[r.get("model") or r.get("description") or "other"] += cents_to_usd(r["amount"])
     top = sorted(per_model.items(), key=lambda kv: kv[1], reverse=True)[:TOP_N]
     return {
         "t": "cost",

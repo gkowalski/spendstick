@@ -119,18 +119,18 @@ void drawUsage() {
 
 void drawCost() {
   canvas.fillScreen(C_BG);
-  if (!cost.valid) return drawWaiting("COST", C_COST);
-  drawHeader("COST today", C_COST, cost.rxMs, true);
+  if (!cost.valid) return drawWaiting("COST 7d", C_COST);
+  drawHeader("COST 7d", C_COST, cost.rxMs, true);
   canvas.setTextColor(C_FG);
   canvas.setTextSize(3);
   canvas.setCursor(4, 16);
-  canvas.printf("$%.2f", cost.today);
+  canvas.printf("$%.2f", cost.d7);
   canvas.setTextSize(1);
   canvas.setTextColor(C_DIM);
   canvas.setCursor(4, 42);
-  canvas.printf("7d $%.2f", cost.d7);
+  canvas.printf("today $%.2f", cost.today);
   canvas.setCursor(4, 52);
-  canvas.print(cost.top);
+  canvas.print(cost.top[0] ? cost.top : "no spend");
   drawBars(cost.spark, cost.nSpark, 4, 62, 152, 16, C_COST);
 }
 
