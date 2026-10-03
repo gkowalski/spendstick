@@ -6,6 +6,10 @@ a frame format, so **reflash the firmware and restart `uv run sticks3` on every 
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.3 - 2026-10-03
+
 ### Added
 - **Reset screen**, a third screen in the rotation: countdown to the monthly reset (00:00 UTC on the
   first of the next month), month-to-date cost from the Cost API, and a month-elapsed progress bar.
