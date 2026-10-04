@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include <SPI.h>
 
-#define FW_VERSION "0.4"
+#define FW_VERSION "0.4.1"
 
 // T-Dongle C5 pins (LilyGO pinout)
 constexpr int PIN_MOSI = 2, PIN_MISO = 7, PIN_SCK = 6, PIN_CS = 10, PIN_DC = 3, PIN_BL = 0, PIN_RST = 1;
@@ -58,6 +58,7 @@ constexpr uint8_t NUM_SCREENS = 4;
 uint8_t screen = 0;
 uint32_t screenSince = 0;
 String line;
+bool needRender = false;
 
 // RGB565 palette
 uint16_t C_BG, C_FG, C_DIM, C_USAGE, C_COST, C_RESET, C_MODELS, C_BAD;
@@ -275,10 +276,13 @@ void handleLine(const String& s) {
   } else {
     return;
   }
-  render();
+  // Redraw from loop(), not here, so back-to-back frames aren't lost while the LCD refreshes.
+  needRender = true;
+  Serial.printf("{\"rx\":\"%s\"}\n", t);
 }
 
 void setup() {
+  Serial.setRxBufferSize(4096);  // must precede begin(); default 256 B overflows on bursts
   Serial.begin(115200);
   delay(1500);
   Serial.println("boot: serial up");
@@ -316,6 +320,11 @@ void loop() {
     } else if (c != '\r' && line.length() < 2048) {
       line += c;
     }
+  }
+
+  if (needRender) {
+    needRender = false;
+    render();
   }
 
   static bool btnPrev = true;

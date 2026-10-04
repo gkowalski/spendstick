@@ -6,12 +6,25 @@ a frame format, so **reflash the firmware and restart `uv run sticks3` on every 
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.4.1 - 2026-10-04
+
+### Fixed
+- **Screens stuck on "waiting for host..."** after a push (seen on the Models screen). The host sent
+  frames back-to-back while the firmware redrew the LCD after each one, overflowing the chip's small
+  USB-serial receive buffer. The firmware now has a 4 KB receive buffer and redraws from the main loop,
+  and acknowledges each frame (`{"rx":"<type>"}`). The host waits for the ack, which also paces the
+  frames, and prints a warning if one is missing.
+
 ### Changed
-- Firmware now reports its real version in the `hello` reply (`"fw":"0.4"`, was `"0.1"`), and the
-  package version is `0.4.0`.
+- Firmware now reports its real version in the `hello` reply (`"fw":"0.4.1"`, was `"0.1"`), and the
+  package version is `0.4.1`.
+- README documents cycling screens with the BOOT button and describes all four screens.
 
 ### Upgrade notes
-- Reflash the firmware to pick up the new version string; behavior is otherwise unchanged.
+- Reflash the firmware (new receive buffer and acks) and restart the host. An old host works with the
+  new firmware, but a new host prints "no acknowledgement" warnings against old firmware.
 
 ## v0.4 - 2026-10-04
 

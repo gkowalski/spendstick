@@ -49,6 +49,16 @@ def find_device(explicit: str | None = None) -> serial.Serial | None:
     return None
 
 
-def send(ser: serial.Serial, frame: dict) -> None:
+def send(ser: serial.Serial, frame: dict, ack_timeout: float = 2.0) -> bool:
+    """Write one frame and wait for the device's {"rx":"<type>"} acknowledgement.
+
+    Returns False if no ack arrives (frame lost). Waiting also paces back-to-back frames.
+    """
     ser.write((json.dumps(frame, separators=(",", ":")) + "\n").encode())
     ser.flush()
+    want = f'"rx":"{frame["t"]}"'
+    deadline = time.monotonic() + ack_timeout
+    while time.monotonic() < deadline:
+        if want in ser.readline().decode("utf-8", "ignore"):
+            return True
+    return False

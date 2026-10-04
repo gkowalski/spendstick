@@ -126,7 +126,8 @@ def main() -> None:
                     break
                 print(f"connected: {ser.port}")
             try:
-                device.send(ser, f)
+                if not device.send(ser, f):
+                    print(f"no acknowledgement for '{f['t']}' frame (old firmware or frame lost)")
             except (serial.SerialException, OSError):
                 print("device lost; will reconnect")
                 ser.close()
