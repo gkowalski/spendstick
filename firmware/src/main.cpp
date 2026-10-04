@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include <SPI.h>
 
-#define FW_VERSION "0.1"
+#define FW_VERSION "0.4"
 
 // T-Dongle C5 pins (LilyGO pinout)
 constexpr int PIN_MOSI = 2, PIN_MISO = 7, PIN_SCK = 6, PIN_CS = 10, PIN_DC = 3, PIN_BL = 0, PIN_RST = 1;

@@ -6,7 +6,12 @@ a frame format, so **reflash the firmware and restart `uv run sticks3` on every 
 
 ## Unreleased
 
-Nothing yet.
+### Changed
+- Firmware now reports its real version in the `hello` reply (`"fw":"0.4"`, was `"0.1"`), and the
+  package version is `0.4.0`.
+
+### Upgrade notes
+- Reflash the firmware to pick up the new version string; behavior is otherwise unchanged.
 
 ## v0.4 - 2026-10-04
 
