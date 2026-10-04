@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sticks3.frames import cents_to_usd, cost_frame, month_bounds, mtd_buckets, reset_frame, usage_frame
+from sticks3.frames import cents_to_usd, cost_frame, models_frame, month_bounds, mtd_buckets, reset_frame, usage_frame
 
 
 def _res(model, i=0, o=0, cr=0, c5=0, c1=0):
@@ -72,3 +72,17 @@ def test_mtd_buckets_drops_previous_month():
         {"starting_at": "2026-10-02T00:00:00Z", "results": []},
     ]
     assert [b["starting_at"][:10] for b in mtd_buckets(buckets, now)] == ["2026-10-01", "2026-10-02"]
+
+
+def test_models_frame_ranks_by_spend_and_caps_rows():
+    daily = [{"results": [_res("a", i=100), _res("b", i=500), _res("c", i=1), _res("d", i=1), _res("e", i=1)]}]
+    cost = [{"results": [{"amount": "300", "model": "a"}, {"amount": "100", "model": "b"}]}]
+    f = models_frame(daily, cost, ts=1)
+    assert f["n"] == 5
+    assert [r[0] for r in f["rows"]] == ["a", "b", "c", "d"]  # ties broken by name
+    assert f["rows"][0] == ["a", 100, 3.0]
+    assert len(f["rows"]) == 4
+
+
+def test_models_frame_empty():
+    assert models_frame([], [], ts=1) == {"t": "models", "n": 0, "rows": [], "ts": 1}

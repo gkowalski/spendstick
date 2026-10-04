@@ -44,13 +44,23 @@ struct Reset {
   uint32_t rxMs = 0;
 } reset;
 
-constexpr uint8_t NUM_SCREENS = 3;
+struct Models {
+  bool valid = false;
+  uint8_t n = 0;       // rows stored (max 4)
+  uint8_t total = 0;   // total models seen by the host
+  char name[4][26] = {};
+  uint64_t tokens[4] = {};
+  float usd[4] = {};
+  uint32_t rxMs = 0;
+} models;
+
+constexpr uint8_t NUM_SCREENS = 4;
 uint8_t screen = 0;
 uint32_t screenSince = 0;
 String line;
 
 // RGB565 palette
-uint16_t C_BG, C_FG, C_DIM, C_USAGE, C_COST, C_RESET, C_BAD;
+uint16_t C_BG, C_FG, C_DIM, C_USAGE, C_COST, C_RESET, C_MODELS, C_BAD;
 
 String fmtTokens(uint64_t n) {
   char b[16];
@@ -61,10 +71,10 @@ String fmtTokens(uint64_t n) {
   return b;
 }
 
-String shortModel(const char* m) {
+String shortModel(const char* m, size_t maxLen = 14) {
   String s(m);
   if (s.startsWith("claude-")) s.remove(0, 7);
-  if (s.length() > 14) s = s.substring(0, 14);
+  if (s.length() > maxLen) s = s.substring(0, maxLen);
   return s;
 }
 
@@ -144,6 +154,42 @@ void drawCost() {
   drawBars(cost.spark, cost.nSpark, 4, 62, 152, 16, C_COST);
 }
 
+void drawModels() {
+  canvas.fillScreen(C_BG);
+  if (!models.valid) return drawWaiting("MODELS 7d", C_MODELS);
+  drawHeader("MODELS 7d", C_MODELS, models.rxMs, true);
+  canvas.setTextSize(1);
+  if (models.n == 0) {
+    canvas.setTextColor(C_DIM);
+    canvas.setCursor(8, 38);
+    canvas.print("no model usage");
+    return;
+  }
+  for (uint8_t i = 0; i < models.n; i++) {
+    int y = 16 + i * 12;
+    if (i % 2 == 0) canvas.fillRect(0, y - 2, 160, 12, tft.color565(22, 26, 36));
+    canvas.setTextColor(C_FG);
+    canvas.setCursor(3, y);
+    canvas.print(shortModel(models.name[i], 11));
+    canvas.setTextColor(C_DIM);
+    canvas.setCursor(76, y);
+    canvas.print(fmtTokens(models.tokens[i]));
+    char b[12];
+    snprintf(b, sizeof b, "$%.2f", models.usd[i]);
+    int16_t x1, y1;
+    uint16_t w, h;
+    canvas.getTextBounds(b, 0, 0, &x1, &y1, &w, &h);
+    canvas.setTextColor(C_MODELS);
+    canvas.setCursor(157 - w, y);
+    canvas.print(b);
+  }
+  if (models.total > models.n) {
+    canvas.setTextColor(C_DIM);
+    canvas.setCursor(3, 69);
+    canvas.printf("+%u more", (unsigned)(models.total - models.n));
+  }
+}
+
 void drawReset() {
   canvas.fillScreen(C_BG);
   if (!reset.valid) return drawWaiting("RESET monthly", C_RESET);
@@ -171,6 +217,7 @@ void drawReset() {
 void render() {
   if (screen == 0) drawUsage();
   else if (screen == 1) drawCost();
+  else if (screen == 2) drawModels();
   else drawReset();
   tft.drawRGBBitmap(0, 0, canvas.getBuffer(), 160, 80);
 }
@@ -206,6 +253,18 @@ void handleLine(const String& s) {
     }
     cost.valid = true;
     cost.rxMs = millis();
+  } else if (!strcmp(t, "models")) {
+    models.total = doc["n"] | 0;
+    models.n = 0;
+    for (JsonArray row : doc["rows"].as<JsonArray>()) {
+      if (models.n >= 4) break;
+      snprintf(models.name[models.n], sizeof models.name[0], "%s", (const char*)(row[0] | ""));
+      models.tokens[models.n] = row[1] | 0ULL;
+      models.usd[models.n] = row[2] | 0.0f;
+      models.n++;
+    }
+    models.valid = true;
+    models.rxMs = millis();
   } else if (!strcmp(t, "reset")) {
     reset.leftS = doc["left_s"] | 0u;
     reset.elapsed = doc["elapsed"] | 0.0f;
@@ -239,6 +298,7 @@ void setup() {
   C_USAGE = tft.color565(255, 150, 60);
   C_COST = tft.color565(60, 200, 180);
   C_RESET = tft.color565(150, 130, 255);
+  C_MODELS = tft.color565(255, 205, 70);
   C_BAD = tft.color565(230, 60, 60);
   line.reserve(2048);
   Serial.println("boot: first render");

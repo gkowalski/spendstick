@@ -8,6 +8,16 @@ a frame format, so **reflash the firmware and restart `uv run sticks3` on every 
 
 Nothing yet.
 
+## v0.4 - 2026-10-04
+
+### Added
+- **Models screen**, a fourth screen in the rotation listing up to four models ranked by 7-day
+  spend (short name, tokens, dollars) with a "+N more" line when you use more than four. New
+  `models` frame and `models_frame` helper with tests.
+
+### Upgrade notes
+- Reflash the firmware and restart the host.
+
 ## v0.3.1 - 2026-10-03
 
 ### Fixed

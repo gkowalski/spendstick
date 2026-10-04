@@ -10,7 +10,8 @@ screen and a Cost screen every 60 s on its 160x80 LCD.
 
 ![The Usage screen running on a T-Dongle C5: 7-day total, 24h in/out, and a countdown to the next screen](images/spendstick-usage.jpg)
  
-The screens rotate every 60 s: **Usage** (7-day total), **Cost** (7-day total) and **Reset**
+The screens rotate every 60 s: **Usage** (7-day total), **Cost** (7-day total), **Models** (up to four
+models ranked by 7-day spend, with tokens and dollars, and "+N more" beyond four) and **Reset**
 (countdown to the monthly reset, plus month-to-date cost and a month-elapsed bar).
 
 The reset time is computed locally as 00:00 UTC on the first of the next calendar month, which is how

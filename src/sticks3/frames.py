@@ -111,3 +111,22 @@ def mtd_buckets(buckets: list[dict], now: datetime) -> list[dict]:
         if st is None or datetime.fromisoformat(st.replace("Z", "+00:00")) >= start:
             out.append(b)
     return out
+
+
+MODEL_ROWS = 4
+
+
+def models_frame(daily_usage: list[dict], cost_buckets: list[dict], ts: int) -> dict:
+    """Per-model 7-day tokens and cost, ranked by spend (then tokens). `n` is the total model count."""
+    tokens: dict[str, int] = defaultdict(int)
+    for b in daily_usage[-7:]:
+        for r in b["results"]:
+            tokens[r.get("model") or "other"] += sum(bucket_tokens(r).values())
+    usd: dict[str, float] = defaultdict(float)
+    for b in cost_buckets[-7:]:
+        for r in b["results"]:
+            usd[r.get("model") or "other"] += cents_to_usd(r["amount"])
+    rows = [[m, tokens.get(m, 0), round(usd.get(m, 0.0), 2)] for m in set(tokens) | set(usd)]
+    rows = [r for r in rows if r[1] > 0 or r[2] > 0]
+    rows.sort(key=lambda r: (-r[2], -r[1], r[0]))
+    return {"t": "models", "n": len(rows), "rows": rows[:MODEL_ROWS], "ts": ts}

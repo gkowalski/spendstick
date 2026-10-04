@@ -9,7 +9,7 @@ Mac-side Python program + ESP32-C5 firmware that shows Anthropic Admin API usage
 - `tests/` pytest (`uv run pytest`)
 
 ## Wire protocol
-Newline-delimited JSON host -> device over USB CDC: `{"t":"usage"|"cost",...}` frames and `{"t":"hello"}` -> `{"ok":"tdongle-c5","fw":...}`. Keep `frames.py` and the parser in `firmware/src/main.cpp` in sync when changing fields.
+Newline-delimited JSON host -> device over USB CDC: `{"t":"usage"|"cost"|"models"|"reset",...}` frames and `{"t":"hello"}` -> `{"ok":"tdongle-c5","fw":...}`. Keep `frames.py` and the parser in `firmware/src/main.cpp` in sync when changing fields.
 
 ## Gotchas
 - Usage/Cost endpoints need an **Admin API key** (`sk-ant-admin...`, or a non-workspace-scoped personal/service key of an org member) in `.env` (gitignored). Never print or commit it.

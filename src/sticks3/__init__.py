@@ -9,7 +9,7 @@ import serial
 from sticks3 import device
 from sticks3.admin_api import AdminApi, RateLimited
 from sticks3.config import load_config
-from sticks3.frames import cost_frame, mtd_buckets, reset_frame, usage_frame
+from sticks3.frames import cost_frame, models_frame, mtd_buckets, reset_frame, usage_frame
 
 
 def _sample_frames() -> list[dict]:
@@ -31,6 +31,17 @@ def _sample_frames() -> list[dict]:
             "top": [["claude-opus-5", 3.9], ["claude-sonnet-5", 0.9]],
             "ts": ts,
         },
+        {
+            "t": "models",
+            "n": 5,
+            "rows": [
+                ["claude-opus-5", 1_200_000, 3.90],
+                ["claude-sonnet-5", 600_000, 0.90],
+                ["claude-sonnet-4-6", 96_401, 0.32],
+                ["claude-haiku-4-5-20251001", 40_000, 0.02],
+            ],
+            "ts": ts,
+        },
         reset_frame(datetime.now(timezone.utc), [{"results": [{"amount": "1840"}]}], ts),
     ]
 
@@ -48,6 +59,7 @@ def _build_frames(raw: dict) -> list[dict]:
     return [
         usage_frame(raw["hourly"], raw["daily"], ts),
         cost_frame(raw["cost"], ts),
+        models_frame(raw["daily"], raw["cost"], ts),
         reset_frame(now, mtd_buckets(raw["cost"], now), ts),
     ]
 
